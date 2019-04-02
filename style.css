@@ -1,0 +1,18 @@
+#map {
+  width: 100%;
+  height: 100%;
+}
+#locationInput {
+  top: 65px;
+  left: 30px;
+}
+#locationSubmit {
+  top: 80px;
+}
+.rotate-north {
+  top: 65px;
+  left: 0.5em;
+}
+.ol-touch .rotate-north {
+  top: 80px;
+}
