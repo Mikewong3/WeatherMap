@@ -7,6 +7,7 @@
       href="https://openlayers.org/en/v5.3.0/css/ol.css"
       type="text/css"
     />
+    <link href="weather.css" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
     <title>Using Parcel with OpenLayers</title>
     <script
@@ -23,12 +24,15 @@
   <body>
     <div class="mapContainer">
       <div id="map">
-        <input
-          type="text"
-          id="locationInput"
-          value="1516 Henry Avenue, Mamaroneck, NY"
-        /><br />
+        <div id="locationInputContainer">
+          <input
+            type="text"
+            id="locationInput"
+            value="1516 Henry Avenue, Mamaroneck, NY"
+          /><br />
+        </div>
         <button id="locationSubmit">Submit</button>
+        <div id="weatherBox"></div>
       </div>
     </div>
     <script src="index.js"></script>

@@ -3,9 +3,13 @@ import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
 import { fromLonLat } from "ol/proj.js";
 import { toStringHDMS } from "ol/coordinate.js";
-import Overlay from "ol/Overlay.js";
+//import Overlay from "ol/Overlay.js";
 import { defaults as defaultControls, Control } from "ol/control.js";
 var request = require("request");
+import TileDebug from "ol/source.js";
+import XYZ from "ol/source/XYZ.js";
+import { extend } from "ol/extent";
+import PluggableMap from "ol/PluggableMap";
 
 var locations;
 var location;
@@ -19,25 +23,33 @@ document.getElementById("locationSubmit").addEventListener("click", function() {
   var geocodingParams = {
     searchText: location
   };
+  //This clears the weatherBox everytime a new search is made
+  document.getElementById("weatherBox").innerHTML == "";
+  var weatherIcon = document.getElementById("weatherIcon");
+  if (weatherIcon != null) {
+    weatherIcon.parentNode.removeChild(weatherIcon);
+  }
+  //this calls the geocode api->gets the location->runs onResult function
   geocoder.geocode(geocodingParams, onResult, function(e) {
     alert(e);
   });
 });
-
 //Note: Do all the map adjustments in this function
 // Define a callback function to process the geocoding response:
 var onResult = function(result) {
   locations = result.Response.View[0].Result;
-  // Add a marker for each location found
+  // This gets all the lat/long for the searched address
   var i = 0;
   for (i; i < locations.length; i++) {
     console.log("lat: " + locations[i].Location.DisplayPosition.Latitude);
     console.log("long: " + locations[i].Location.DisplayPosition.Longitude);
   }
+  //converts lat/long numbers to openlayers lat/long format
   var locationLatLong = fromLonLat([
     locations[0].Location.DisplayPosition.Longitude,
     locations[0].Location.DisplayPosition.Latitude
   ]);
+  //This zooms into the search location
   view.animate({
     center: locationLatLong,
     duration: 2000,
@@ -48,17 +60,92 @@ var onResult = function(result) {
     locations[0].Location.DisplayPosition.Latitude +
     "&lon=" +
     locations[0].Location.DisplayPosition.Longitude +
-    "&&AppID=5048c430cd4add92963e0c737d40437f";
-  console.log(query);
-
+    "&AppID=5048c430cd4add92963e0c737d40437f";
+  var weatherJSON = null;
   request(query, function(error, response, body) {
     if (!error && response.statusCode == 200) {
-      var importedJSON = JSON.parse(body);
-      console.log(importedJSON);
+      weatherJSON = JSON.parse(body);
+      console.log(weatherJSON.weather);
+      //this code here will generate the correct weatherIcon for the given location
+      var imgscr = "";
+      switch (weatherJSON.weather[0]["id"]) {
+        case 800:
+          imgscr = "/sunny.104d9cd4.png";
+          console.log("This is correct");
+          break;
+        case 801:
+        case 802:
+        case 803:
+        case 804:
+          imgscr = "/cloudy.d8afbff7.png";
+          console.log("Today");
+          break;
+        case 500:
+        case 501:
+        case 520:
+        case 531:
+          imgscr = "/moderaterrain.e3c5be1c.png";
+          break;
+        case 502:
+        case 503:
+        case 504:
+        case 511:
+        case 521:
+        case 522:
+          imgscr = "/heavyrain.15dd8b2c.png";
+          break;
+        case 200:
+        case 201:
+        case 202:
+        case 211:
+        case 212:
+          imgscr = "/thunder.3fe68844.png";
+          break;
+        case 600:
+          imgscr = "/thunder.3fe68844.png";
+          break;
+        case 601:
+        case 602:
+        case 611:
+        case 612:
+        case 613:
+        case 615:
+        case 616:
+        case 620:
+        case 621:
+        case 622:
+          imgscr = "/snow.af099d52.png";
+          break;
+        case 741:
+          imgscr = "/fog.00544988.png";
+          break;
+      }
+      console.log(imgscr);
+      createWeatherBox(imgscr);
     }
   });
-};
 
+  /*var layer_cloud = new TileLayer({
+    title: "Clouds",
+    source: new XYZ({
+      url:
+        "https://tile.openweathermap.org/map/temp_new/3/0/0&lat=" +
+        locations[0].Location.DisplayPosition.Latitude +
+        "&lon=" +
+        locations[0].Location.DisplayPosition.Longitude +
+        "?appid=5048c430cd4add92963e0c737d40437f"
+    })
+  map.addLayer(layer_cloud);*/
+};
+function createWeatherBox(src) {
+  var weatherBox = document.getElementById("weatherBox");
+  var weatherIcon = document.createElement("img");
+  weatherIcon.src = src;
+  weatherIcon.id = "weatherIcon";
+  weatherIcon.setAttribute("height", "50px");
+  weatherIcon.setAttribute("width", "50px");
+  document.getElementById("weatherBox").appendChild(weatherIcon);
+}
 // Get an instance of the geocoding service:
 var geocoder = platform.getGeocodingService();
 
@@ -68,13 +155,33 @@ var view = new View({
   minResolution: 1
 });
 
-const map = new Map({
+var map = new Map({
   target: "map",
   layers: [
     new TileLayer({
-      preload: 4,
       source: new OSM()
     })
   ],
   view: view
 });
+
+//These add custom controls/textbox/weatherInfoBox to the map
+var locationSubmitButton = document.getElementById("locationSubmit");
+var locationSubmit = new Control({
+  element: locationSubmitButton,
+  target: "ol-unselectable"
+});
+map.addControl(locationSubmit);
+
+var location = document.getElementById("locationInputContainer");
+var locationText = new Control({
+  element: location,
+  target: document.getElementById("ol-unselectable")
+});
+locationText.setMap(map);
+
+var weatherBox = document.getElementById("weatherBox");
+var weatherContainer = new Control({
+  element: weatherBox
+});
+map.addControl(weatherContainer);
