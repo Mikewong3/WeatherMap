@@ -10,9 +10,12 @@ import TileDebug from "ol/source.js";
 import XYZ from "ol/source/XYZ.js";
 import { extend } from "ol/extent";
 import PluggableMap from "ol/PluggableMap";
+import imageLayer from "ol/layer/Image";
+import Static from "ol/source/ImageStatic.js";
 
 var locations;
 var location;
+//ID for openlayersapi
 var platform = new H.service.Platform({
   app_id: "WKaV3ZYegGwN1CsGJtz4",
   app_code: "IHeCfcws9gZjqyuyOQ-mKQ"
@@ -28,6 +31,10 @@ document.getElementById("locationSubmit").addEventListener("click", function() {
   var weatherIcon = document.getElementById("weatherIcon");
   if (weatherIcon != null) {
     weatherIcon.parentNode.removeChild(weatherIcon);
+  }
+  var weatherData = document.getElementById("weatherData");
+  if (weatherData != null) {
+    weatherData.parentNode.removeChild(weatherData);
   }
   //this calls the geocode api->gets the location->runs onResult function
   geocoder.geocode(geocodingParams, onResult, function(e) {
@@ -60,7 +67,7 @@ var onResult = function(result) {
     locations[0].Location.DisplayPosition.Latitude +
     "&lon=" +
     locations[0].Location.DisplayPosition.Longitude +
-    "&AppID=5048c430cd4add92963e0c737d40437f";
+    "&units=imperial&AppID=5048c430cd4add92963e0c737d40437f";
   var weatherJSON = null;
   request(query, function(error, response, body) {
     if (!error && response.statusCode == 200) {
@@ -117,28 +124,26 @@ var onResult = function(result) {
           imgscr = "/snow.af099d52.png";
           break;
         case 741:
+        case 721:
           imgscr = "/fog.00544988.png";
           break;
       }
       console.log(imgscr);
-      createWeatherBox(imgscr);
+      createWeatherBox(imgscr, weatherJSON.main["temp"]);
+      document.getElementById("weatherBox").style.backgroundColor =
+        "rgba(238, 246, 255, 0.7)";
     }
   });
-
-  /*var layer_cloud = new TileLayer({
-    title: "Clouds",
-    source: new XYZ({
-      url:
-        "https://tile.openweathermap.org/map/temp_new/3/0/0&lat=" +
-        locations[0].Location.DisplayPosition.Latitude +
-        "&lon=" +
-        locations[0].Location.DisplayPosition.Longitude +
-        "?appid=5048c430cd4add92963e0c737d40437f"
-    })
-  map.addLayer(layer_cloud);*/
 };
-function createWeatherBox(src) {
+
+//This function creates a weatherbox in the map after the search button is clicked
+//It adds the img and puts the current temp in the weatherbox
+function createWeatherBox(src, temp) {
   var weatherBox = document.getElementById("weatherBox");
+  var weatherData = document.createElement("h1");
+  weatherData.id = "weatherData";
+  weatherData.innerHTML = temp;
+  weatherBox.appendChild(weatherData);
   var weatherIcon = document.createElement("img");
   weatherIcon.src = src;
   weatherIcon.id = "weatherIcon";
@@ -185,3 +190,23 @@ var weatherContainer = new Control({
   element: weatherBox
 });
 map.addControl(weatherContainer);
+
+/*
+var weatherLayer = new imageLayer({
+  source: new Static({
+    url: "http://pngimg.com/uploads/rain/rain_PNG13453.png",
+    crossOrigin: ""
+  })
+});
+map.addLayer(weatherLayer);
+
+var osm = new OSM();
+var graphic = new imageLayer(
+  "Image",
+  "http://pngimg.com/uploads/rain/rain_PNG13453.png",
+  new bounds(27.4181, 35.7711, 28.388, 36.5585),
+  new size(800, 255),
+  { numZoomLevels: 3 }
+);
+map.addLayers([graphic, osm]);
+*/
